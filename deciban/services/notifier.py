@@ -53,6 +53,11 @@ def notify(db: Session, probe: Probe) -> int:
                 data=payload,
                 vapid_private_key=settings.vapid_private_key,
                 vapid_claims={"sub": settings.vapid_subject},
+                # Un controle a une duree de vie : livre trop tard il ne
+                # sert plus a rien, mais un TTL de zero le perdrait au
+                # moindre hoquet reseau.
+                ttl=Probe.WINDOW,
+                headers={"Urgency": "high"},
             )
             sent += 1
         except WebPushException as exc:  # pragma: no cover - reseau
