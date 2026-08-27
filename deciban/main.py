@@ -6,8 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from deciban.core.config import get_settings
-from deciban.core.database import Base, engine
-from deciban.models import entities  # noqa: F401  (enregistre les tables)
+from deciban.core.schema import ensure_schema
 from deciban.routes import applicants, sessions, system
 
 
@@ -44,6 +43,4 @@ def create_app() -> FastAPI:
 
 app = create_app()
 
-# En developpement les tables sont creees au demarrage ; en production
-# c'est Alembic qui fait foi.
-Base.metadata.create_all(bind=engine)
+ensure_schema()

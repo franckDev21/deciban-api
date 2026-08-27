@@ -13,6 +13,7 @@ import time
 from sqlalchemy import select
 
 from deciban.core.database import SessionLocal
+from deciban.core.schema import ensure_schema
 from deciban.models.entities import Probe, utcnow
 from deciban.routes.system import touch
 from deciban.services.notifier import notify
@@ -59,6 +60,10 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="[%(asctime)s] %(message)s", datefmt="%H:%M:%S")
+
+    # Le repartiteur peut demarrer avant l'API : il ne doit pas dependre
+    # d'elle pour trouver ses tables.
+    ensure_schema()
 
     if not args.watch:
         run_once()

@@ -31,6 +31,13 @@ ENV PATH="/opt/venv/bin:$PATH" \
 # On ne tourne jamais en root : une faille dans l'application ne doit pas
 # donner les pleins pouvoirs sur le conteneur.
 RUN useradd --create-home --shell /usr/sbin/nologin deciban
+
+# Le repertoire de donnees doit exister ET appartenir a l'utilisateur AVANT
+# le montage : un volume nomme herite des droits du dossier present dans
+# l'image. Sans cela il arrive en root et le processus ne peut pas ecrire.
+RUN mkdir -p /data && chown deciban:deciban /data
+VOLUME ["/data"]
+
 WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv
