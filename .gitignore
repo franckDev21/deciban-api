@@ -1,0 +1,23 @@
+# Dépendances
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Environnement
+# La clé privée VAPID signe les notifications au nom du service :
+# elle ne doit jamais quitter la machine ni le serveur.
+.env
+!.env.example
+
+# Base de données locale
+*.sqlite
+*.sqlite-journal
+
+# Système
+.DS_Store
+*.log

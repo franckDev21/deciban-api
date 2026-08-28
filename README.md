@@ -10,16 +10,18 @@ FastAPI · SQLAlchemy 2 · Pydantic v2 · scipy · Python 3.12
 
 ### Avec Docker, recommandé
 
-Depuis la racine du dépôt :
-
 ```bash
-docker compose up --build api dispatcher
+git clone git@github.com:franckDev21/deciban-api.git
+cd deciban-api
+cp .env.example .env        # puis générer les clés VAPID, voir plus bas
+docker compose up --build
 ```
+
+Deux services démarrent : l'API et le répartiteur.
 
 ### En local
 
 ```bash
-cd api-py
 python3.12 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 cp .env.example .env
@@ -171,4 +173,6 @@ Ce que la suite couvre, au-delà du chemin nominal :
 
 ## Contribuer
 
-Voir [CONTRIBUTING.md](../CONTRIBUTING.md) à la racine du dépôt.
+Voir [CONTRIBUTING.md](CONTRIBUTING.md).
+
+L'interface vit dans un dépôt séparé : [deciban-web](https://github.com/franckDev21/deciban-web).

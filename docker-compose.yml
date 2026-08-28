@@ -1,0 +1,37 @@
+# API Deciban, en une commande.
+#
+#   cp .env.example .env      # puis générer les clés VAPID
+#   docker compose up --build
+#
+# Deux services, et le second n'est pas optionnel : sans le répartiteur,
+# l'API répond correctement mais aucun contrôle ne se déclenche jamais.
+
+services:
+  api:
+    build: .
+    environment:
+      DATABASE_URL: sqlite:////data/deciban.sqlite
+      FRONTEND_URLS: ${FRONTEND_URLS:-http://localhost:3000}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:contact@deciban.local}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+    volumes:
+      - deciban-data:/data
+    ports:
+      - "8000:8000"
+
+  dispatcher:
+    build: .
+    command: ["python", "-m", "deciban.dispatcher", "--watch"]
+    environment:
+      DATABASE_URL: sqlite:////data/deciban.sqlite
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:contact@deciban.local}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+    volumes:
+      - deciban-data:/data
+    depends_on:
+      - api
+
+volumes:
+  deciban-data:
