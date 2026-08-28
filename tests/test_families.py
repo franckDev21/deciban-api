@@ -1,14 +1,25 @@
 """Cognition, rythme et provenance."""
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
-from deciban.models.entities import utcnow
 from deciban.services import cognition, provenance, rhythm
 
+#: Ancre fixe, a une heure qui ne frole aucun minuit.
+#:
+#: Les sessions etaient auparavant placees par rapport a utcnow(). Le
+#: regroupement se faisant par DATE calendaire, deux sessions distantes de
+#: vingt-deux heures tombaient le meme jour lorsque le test s'executait peu
+#: apres minuit : elles fusionnaient, et le pic se retrouvait en derniere
+#: position sans rien apres lui. Le test passait la journee et echouait la
+#: nuit. rhythm.score ne lit jamais l'heure courante, une ancre fixe suffit
+#: donc a le rendre deterministe.
+ANCHOR = datetime(2026, 8, 3, 9, 0, tzinfo=UTC)
 
-def _session(start_offset_h: float, duration_min: float) -> SimpleNamespace:
-    start = utcnow() - timedelta(hours=start_offset_h)
+
+def _session(day: int, duration_min: float, hour: int = 9) -> SimpleNamespace:
+    """Session demarrant le jour `day` apres l'ancre, a `hour` heures."""
+    start = ANCHOR + timedelta(days=day, hours=hour - 9)
     return SimpleNamespace(starts_at=start, ends_at=start + timedelta(minutes=duration_min))
 
 
@@ -46,17 +57,17 @@ def test_une_lecture_surhumaine_est_a_charge() -> None:
 def test_le_rebond_apres_exces_est_une_preuve_positive() -> None:
     """Une machine n'a pas de dette de sommeil a rembourser."""
     sessions = [
-        _session(72, 19 * 60),
-        _session(48, 19 * 60),
-        _session(24, 19 * 60),
-        _session(2, 60),  # effondrement
+        _session(0, 19 * 60),
+        _session(1, 19 * 60),
+        _session(2, 19 * 60),
+        _session(3, 60),  # effondrement
     ]
     signal = next(s for s in rhythm.score(sessions)["signals"] if s["key"] == "rebound")
     assert signal["db"] == 6.0
 
 
 def test_des_journees_identiques_sont_a_charge() -> None:
-    sessions = [_session(h, 120) for h in (96, 72, 48, 24)]
+    sessions = [_session(d, 120) for d in range(4)]
     signal = next(s for s in rhythm.score(sessions)["signals"] if s["key"] == "day_variance")
     assert signal["db"] < 0
 
