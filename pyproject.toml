@@ -26,6 +26,17 @@ dev = [
     "mypy>=1.13",
 ]
 
+# Sans cette section, setuptools inspecte la racine du depot, y trouve DEUX
+# dossiers de premier niveau — « deciban » et « migrations » — et refuse de
+# construire (« Multiple top-level packages discovered in a flat-layout »).
+# Le build Docker ne le voyait pas : son etape de construction ne copie que
+# « deciban ». L'integration continue, elle, installe depuis le depot entier.
+#
+# « migrations » n'est pas une bibliotheque : c'est un dossier de scripts
+# executes par Alembic. Il n'a rien a faire dans le paquet installe.
+[tool.setuptools.packages.find]
+include = ["deciban*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
