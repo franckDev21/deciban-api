@@ -44,6 +44,12 @@ COPY --from=builder /opt/venv /opt/venv
 COPY --chown=deciban:deciban deciban ./deciban
 COPY --chown=deciban:deciban pyproject.toml ./
 
+# La chaine de migrations doit voyager AVEC l'application : c'est elle qui met
+# le schema a jour au demarrage. Oubliee ici, l'image se lance mais ne trouve
+# pas ses migrations, et une base neuve reste vide.
+COPY --chown=deciban:deciban alembic.ini ./
+COPY --chown=deciban:deciban migrations ./migrations
+
 USER deciban
 EXPOSE 8000
 
