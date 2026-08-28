@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     vapid_public_key: str = ""
     vapid_private_key: str = ""
 
+    #: Compte unique de l'espace d'administration.
+    admin_email: str = ""
+    #: Empreinte pbkdf2, jamais le mot de passe en clair.
+    admin_password_hash: str = ""
+    #: Signe les jetons de session. Doit etre change en production.
+    secret_key: str = "changez-moi-en-production"
+
     @property
     def cors_origins(self) -> list[str]:
         return [u.strip() for u in self.frontend_urls.split(",") if u.strip()]
@@ -33,6 +40,10 @@ class Settings(BaseSettings):
     def cors_origin_regex(self) -> str | None:
         """None plutot que la chaine vide : Starlette teste la presence."""
         return self.frontend_url_regex or None
+
+    @property
+    def admin_configured(self) -> bool:
+        return bool(self.admin_email and self.admin_password_hash)
 
     @property
     def push_configured(self) -> bool:

@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from deciban.core.config import get_settings
 from deciban.core.schema import ensure_schema
-from deciban.routes import applicants, sessions, system
+from deciban.routes import admin, applicants, sessions, system
 
 
 def create_app() -> FastAPI:
@@ -34,6 +34,7 @@ def create_app() -> FastAPI:
     app.include_router(applicants.router, prefix="/api")
     app.include_router(sessions.router, prefix="/api")
     app.include_router(system.router, prefix="/api")
+    app.include_router(admin.router, prefix="/api")
 
     @app.get("/", include_in_schema=False)
     def root() -> dict[str, Any]:
