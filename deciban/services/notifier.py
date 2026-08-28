@@ -68,6 +68,13 @@ def notify(db: Session, probe: Probe) -> int:
                 expired.append(sub.endpoint)
             else:
                 logger.warning("push echoue : %s", exc)
+        except Exception as exc:  # pragma: no cover - donnee corrompue
+            # Filet de securite. pywebpush leve un binascii.Error, et non une
+            # WebPushException, quand les cles d'un abonnement sont illisibles.
+            # Sans ce rattrapage l'exception remonte jusqu'a la boucle du
+            # repartiteur et l'arrete definitivement.
+            logger.warning("abonnement illisible, retire : %s", exc)
+            expired.append(sub.endpoint)
 
     if expired:
         db.execute(delete(PushSubscription).where(PushSubscription.endpoint.in_(expired)))

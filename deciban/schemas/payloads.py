@@ -1,5 +1,7 @@
 """Schemas d'entree et de sortie, valides par Pydantic."""
 
+import base64
+import binascii
 import re
 from typing import Any, Literal
 
@@ -98,10 +100,32 @@ class ProbeAnswerIn(BaseModel):
 
 
 class PushKeys(BaseModel):
-    p256dh: str = Field(max_length=255)
-    auth: str = Field(max_length=255)
+    #: Non filtrees, des cles illisibles faisaient remonter un binascii.Error
+    #: depuis pywebpush jusqu'a arreter le repartiteur : un seul abonnement
+    #: bancal suffisait a couper TOUTES les notifications.
+    p256dh: str = Field(min_length=16, max_length=255)
+    auth: str = Field(min_length=16, max_length=255)
+
+    @field_validator("p256dh", "auth")
+    @classmethod
+    def decodable_base64url(cls, v: str) -> str:
+        padded = v + "=" * (-len(v) % 4)
+        try:
+            # validate=True : sans lui, base64 ignore silencieusement les
+            # caracteres hors alphabet et accepte n'importe quoi.
+            base64.b64decode(padded, altchars=b"-_", validate=True)
+        except (binascii.Error, ValueError) as exc:
+            raise ValueError("cle push illisible : base64url attendu") from exc
+        return v
 
 
 class SubscriptionIn(BaseModel):
-    endpoint: str = Field(max_length=1000)
+    endpoint: str = Field(min_length=12, max_length=1000)
     keys: PushKeys
+
+    @field_validator("endpoint")
+    @classmethod
+    def https_endpoint(cls, v: str) -> str:
+        if not v.startswith("https://"):
+            raise ValueError("endpoint push invalide : une URL https est attendue")
+        return v

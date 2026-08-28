@@ -117,3 +117,30 @@ def test_sans_cles_vapid_aucun_envoi_n_est_tente(db_session: Session) -> None:
         sent.assert_not_called()
     finally:
         settings.vapid_private_key = saved
+
+
+def test_un_abonnement_illisible_ne_tue_pas_le_repartiteur(db_session: Session) -> None:
+    """Regression : une cle base64 invalide arretait la boucle du repartiteur.
+
+    pywebpush leve un binascii.Error, et non une WebPushException. L'exception
+    remontait donc jusqu'a la boucle et un seul abonnement bancal coupait
+    TOUTES les notifications, y compris celles des autres sessions.
+    """
+    probe = _session_with_probe(db_session)
+    _subscribe(db_session, probe, "https://push.example/corrompu")
+    _subscribe(db_session, probe, "https://push.example/sain")
+
+    import binascii
+
+    def selon_endpoint(**kwargs: object) -> None:
+        if "corrompu" in str(kwargs["subscription_info"]):
+            raise binascii.Error("number of data characters (49) cannot be 1 more")
+
+    with patch("pywebpush.webpush", side_effect=selon_endpoint):
+        envoyes = notifier.notify(db_session, probe)
+
+    # L'abonnement sain est servi malgre le voisin corrompu...
+    assert envoyes == 1
+    # ...et le corrompu est retire pour ne pas revenir a chaque controle.
+    restants = [s.endpoint for s in db_session.scalars(select(PushSubscription)).all()]
+    assert restants == ["https://push.example/sain"]

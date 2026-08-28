@@ -162,7 +162,9 @@ def test_un_abonnement_push_est_enregistre(client) -> None:
         f"/api/sessions/{body['token']}/subscribe",
         json={
             "endpoint": "https://push.example/abc",
-            "keys": {"p256dh": "cle-publique", "auth": "secret"},
+            # Longueurs reelles d'un abonnement navigateur : 65 octets pour
+            # la cle publique, 16 pour le secret, encodes en base64url.
+            "keys": {"p256dh": "BM" + "a" * 84, "auth": "c" * 22},
         },
     )
     assert r.status_code == 201
